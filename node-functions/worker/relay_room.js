@@ -2523,14 +2523,14 @@ export class RelayRoom {
     // logger.debug(`处理请求: ${url.pathname}`);
     // logger.info(`接收到客户端请求\n请求方法: ${request.method}\n请求路径: ${url.pathname}\n客户端IP: ${clientIp}\n用户代理: ${request.headers.get('User-Agent') || '未知'}\n来源页面: ${request.headers.get('Referer') || '无'}\n查询参数: ${JSON.stringify(Object.fromEntries(url.searchParams))}\n请求时间: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\n内容类型: ${request.headers.get('Content-Type') || '无'}\n内容长度: ${request.headers.get('Content-Length') || '0'}\n请求协议: ${url.protocol}\n主机名: ${url.hostname}\n端口: ${url.port || '无'}`);
 
-    const wsPath = "/" + this.env.WS_PATH || "/vnt";
-    if (url.pathname === wsPath) {
+    const wsPath = this.env.WS_PATH || "vnt";
+    if (url.pathname.endsWith("/" + wsPath) || url.pathname.endsWith("/" + wsPath + "/")) {
       logger.info(`客户端IP: ${clientIp} 请求 VNT WebSocket 连接，开始处理`);
       return this.handleWebSocket(request, clientIp);
     }
 
     // 添加健康检查处理
-    if (url.pathname === "/test") {
+    if (url.pathname.endsWith("/test")) {
       logger.debug(`客户端IP: ${clientIp} 请求 /test 状态查询，开始处理`);
       if (!this.checkRateLimit(clientIp, "test")) {
         return new Response(
@@ -2580,7 +2580,7 @@ export class RelayRoom {
     }
 
     // 添加设备列表查询处理
-    if (url.pathname === "/room") {
+    if (url.pathname.endsWith("/room")) {
       logger.debug(`客户端IP: ${clientIp} 请求 /room 设备列表查询，开始处理`);
       if (!this.checkRateLimit(clientIp, "room")) {
         return new Response(
@@ -2603,11 +2603,11 @@ export class RelayRoom {
       return this.handleDeviceListQuery(request);
     }
 
-    if (url.pathname === "/log") {
+    if (url.pathname.endsWith("/log")) {
       logger.debug(`客户端IP: ${clientIp} 请求 /log 日志查询，开始处理`);
       return this.handleLogEndpoint(request);
     }
-    if (url.pathname === "/log/clear") {
+    if (url.pathname.endsWith("/log/clear")) {
       logger.debug(`客户端IP: ${clientIp} 请求 /log/clear 删除日志，开始处理`);
       return this.handleClearLogs(request);
     }
@@ -2617,6 +2617,10 @@ export class RelayRoom {
   }
 
   async handleWebSocket(request, clientIp) {
+    // 适配 EdgeOne Pages 的 WebSocket 处理
+    // EdgeOne Pages 的 WebSocket 升级通过返回带有 webSocket 属性的 Response 实现
+    // 这里我们使用标准的 WebSocketPair 逻辑，但在 EdgeOne 环境下可能需要特殊处理
+    // 如果是在 EdgeOne Node Functions 中，通常直接返回 Response 即可
     const [client, server] = Object.values(new WebSocketPair());
     server.accept();
 
