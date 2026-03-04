@@ -1,4 +1,4 @@
-import { RelayRoom } from "../worker/relay_room";
+import { RelayRoom } from "./worker/relay_room";
 
 // 模拟 Durable Object 的状态管理，使用全局变量（在单个实例内持久）
 // 注意：EdgeOne Pages Functions 可能会在不同请求间重用实例，但也可能销毁
